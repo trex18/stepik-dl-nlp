@@ -3,6 +3,8 @@ import scipy.sparse
 import torch
 from torch.utils.data import Dataset
 
+def pmi(x):
+    pass
 
 def vectorize_texts(tokenized_texts, word2id, word2freq, mode='tfidf', scale=True):
     assert mode in {'tfidf', 'idf', 'tf', 'bin'}
