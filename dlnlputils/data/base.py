@@ -82,7 +82,7 @@ def document_word_occurences(tokenized_texts, word2id, labels, n_classes):
     return result
 
 def pointwise_mutual_information(x):
-    return pass
+    pass
 
 PAD_TOKEN = '__PAD__'
 NUMERIC_TOKEN = '__NUMBER__'
