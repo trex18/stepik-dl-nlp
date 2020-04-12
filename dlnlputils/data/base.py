@@ -68,6 +68,18 @@ def build_vocabulary(tokenized_texts, max_size=1000000, max_doc_freq=0.8, min_co
 
     return word2id, word2freq
 
+def document_word_occurences(tokenized_texts, word2id, labels, n_classes):
+    """
+    this function returns a matrix A (n_classes x n_tokens): 
+    A[L, w] = word w is contained in A[L, w] documents of class L
+    """
+    result = scipy.sparse.dok_matrix(n_classes, len(word2id), dtype=np.float32)
+    for text_id, text in enumerate(tokenized_texts):
+        unique_tokens = set(text)
+        for token in unique_tokens:
+            if word in word2id.keys():
+                result[labels[text_id], word2id[token]] += 1
+    return result
 
 PAD_TOKEN = '__PAD__'
 NUMERIC_TOKEN = '__NUMBER__'
