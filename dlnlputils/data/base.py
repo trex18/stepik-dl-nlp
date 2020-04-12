@@ -81,6 +81,9 @@ def document_word_occurences(tokenized_texts, word2id, labels, n_classes):
                 result[labels[text_id], word2id[token]] += 1
     return result
 
+def pointwise_mutual_information(x):
+    return pass
+
 PAD_TOKEN = '__PAD__'
 NUMERIC_TOKEN = '__NUMBER__'
 NUMERIC_RE = re.compile(r'^([0-9.,e+\-]+|[mcxvi]+)$', re.I)
