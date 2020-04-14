@@ -81,11 +81,6 @@ def document_word_occurences(tokenized_texts, word2id, labels, n_classes):
                 result[labels[text_id], word2id[token]] += 1
     return result
 
-def pointwise_mutual_information(x):
-    pass
-
-def abc2(x):
-    pass
 
 PAD_TOKEN = '__PAD__'
 NUMERIC_TOKEN = '__NUMBER__'
