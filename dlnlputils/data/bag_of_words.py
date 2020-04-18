@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse
 import torch
 from torch.utils.data import Dataset
+from collections import Counter
 
 def pmi(classes_x_tokens, labels):
     """
