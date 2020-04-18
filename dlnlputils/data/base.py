@@ -1,6 +1,6 @@
 import collections
 import re
-
+import scipy.sparse
 import numpy as np
 
 TOKEN_RE = re.compile(r'[\w\d]+')
@@ -73,11 +73,11 @@ def document_word_occurences(tokenized_texts, word2id, labels, n_classes):
     this function returns a matrix A (n_classes x n_tokens): 
     A[L, w] = word w is contained in A[L, w] documents of class L
     """
-    result = scipy.sparse.dok_matrix(n_classes, len(word2id), dtype=np.float32)
+    result = scipy.sparse.dok_matrix((n_classes, len(word2id)), dtype=np.float32)
     for text_id, text in enumerate(tokenized_texts):
         unique_tokens = set(text)
         for token in unique_tokens:
-            if word in word2id.keys():
+            if token in word2id.keys():
                 result[labels[text_id], word2id[token]] += 1
     return result
 

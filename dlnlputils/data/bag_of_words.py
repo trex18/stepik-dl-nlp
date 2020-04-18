@@ -3,8 +3,34 @@ import scipy.sparse
 import torch
 from torch.utils.data import Dataset
 
-def pmi(x):
-    pass
+def pmi(classes_x_tokens, labels):
+    """
+    returns two matrices, pmi(l, w) and pmi(l, neg(w)) of shape n_classes x n_tokens
+    """
+    classes_counter = Counter(labels)
+    classes_counts = np.array([classes_counter[i] for i in sorted(classes_counter.keys())])
+
+    # these are the probabilities of each class
+    p_l = classes_counts / classes_counts.sum() 
+
+    # p_w are the probabilities of each word
+    p_w = classes_x_tokens.sum(0) / classes_counts.sum()
+    # this is the probability that the word w doesn't occur
+    p_w2 = 1.0 - p_w
+    
+
+    #p_lw is the probability of a word w occuring in a document of a class l
+    p_lw = np.multiply(classes_x_tokens, 1.0 / np.expand_dims(classes_counts, 1))
+    p_lw2 = 1.0 - p_lw
+
+    
+    pmi = np.multiply(p_lw, 1.0 / np.expand_dims(p_l, 1))
+    pmi = np.multiply(pmi, 1.0 / p_w)
+    
+    pmi2 = np.multiply(p_lw2, 1.0 / np.expand_dims(p_l, 1))
+    pmi2 = np.multiply(pmi2, 1.0 / p_w2)
+    
+    return pmi, pmi2
 
 def vectorize_texts(tokenized_texts, word2id, word2freq, mode='tfidf', scale=True):
     assert mode in {'tfidf', 'idf', 'tf', 'bin'}
