@@ -33,8 +33,17 @@ def pmi(classes_x_tokens, labels):
     
     return pmi, pmi2
 
-def vectorize_texts(tokenized_texts, word2id, word2freq, mode='tfidf', scale=True):
-    assert mode in {'tfidf', 'idf', 'tf', 'bin'}
+def informativeness(pmi, pmi_neg):
+    """
+    Given matrices of pointwise mutual information of shape n_classes x n_tokens
+    returns an array of informativeness for each word
+    informativeness = min_l[pmi(l, w)] + min_l[pmi(l, neg_w)]
+    """
+    return np.ravel(pmi.max(axis=0) + pmi_neg.max(axis=0))
+
+def vectorize_texts(tokenized_texts, word2id, word2freq, 
+                    mode='tfidf', scale=True, info_vector=None):
+    assert mode in {'tfidf', 'idf', 'tf', 'bin', 'pmi'}
 
     # считаем количество употреблений каждого слова в каждом документе
     result = scipy.sparse.dok_matrix((len(tokenized_texts), len(word2id)), dtype='float32')
@@ -63,6 +72,10 @@ def vectorize_texts(tokenized_texts, word2id, word2freq, mode='tfidf', scale=Tru
         result = result.tocsr()
         result = result.multiply(1 / result.sum(1))  # разделить каждую строку на её длину
         result = result.multiply(1 / word2freq)  # разделить каждый столбец на вес слова
+        
+    elif mode == 'pmi':
+        result = result.tocsc()    
+        result = result.multiply(info_vector)
 
     if scale:
         result = result.tocsc()
