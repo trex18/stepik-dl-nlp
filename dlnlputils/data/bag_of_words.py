@@ -41,9 +41,11 @@ def informativeness(pmi, pmi_neg):
     """
     return np.ravel(pmi.max(axis=0) + pmi_neg.max(axis=0))
 
-def vectorize_texts(tokenized_texts, word2id, word2freq, 
-                    mode='tfidf', scale=True, info_vector=None):
+def vectorize_texts(tokenized_texts, word2id, word2freq, phase, mode='tfidf',
+                    scale=True, memorize_shifts=False, info_vector=None, scaling_params=None):
+    # here, scaling_params_2 is taken from 
     assert mode in {'tfidf', 'idf', 'tf', 'bin', 'pmi'}
+    assert phase in {'train', 'test'}
 
     # считаем количество употреблений каждого слова в каждом документе
     result = scipy.sparse.dok_matrix((len(tokenized_texts), len(word2id)), dtype='float32')
@@ -77,12 +79,28 @@ def vectorize_texts(tokenized_texts, word2id, word2freq,
         result = result.tocsc()    
         result = result.multiply(info_vector)
 
+    # если режим обучения, и режим запоминания сдвигов (memorize_shifts), 
+    # то запоминаем сдвиг и масштаб, и возвращаем их в scaling_params_learn
+    # если режим тестирования, то используем параметры из scaling_params
+    scaling_params_learn = None
     if scale:
-        result = result.tocsc()
-        result -= result.min()
-        result /= (result.max() + 1e-6)
+        if not memorize_shifts:
+            result = result.tocsc()
+            result -= result.min()
+            result /= (result.max() + 1e-6)
+        else:
+            if phase == 'train':
+                result = result.tocsc()
+                min_ = result.min()
+                result -= min_
+                max_ = result.max() + 1e-6
+                result /= max_
+                scaling_params_learn = [min_, max_]
+            if phase == 'test':
+                result -= scaling_params[0]
+                result /= scaling_params[1]
 
-    return result.tocsr()
+    return result.tocsr(), scaling_params_learn
 
 
 class SparseFeaturesDataset(Dataset):
