@@ -48,7 +48,9 @@ def train_eval_loop(model, train_dataset, val_dataset, criterion,
                     optimizer_ctor=None,
                     lr_scheduler_ctor=None,
                     shuffle_train=True,
-                    dataloader_workers_n=0):
+                    dataloader_workers_n=0, 
+                    l1_regularize=False,
+                    l1_reg_alpha=None):
     """
     Цикл для обучения модели. После каждой эпохи качество модели оценивается по отложенной выборке.
     :param model: torch.nn.Module - обучаемая модель
@@ -66,6 +68,8 @@ def train_eval_loop(model, train_dataset, val_dataset, criterion,
     :param max_batches_per_epoch_val: максимальное количество итераций на одну эпоху валидации
     :param data_loader_ctor: функция для создания объекта, преобразующего датасет в батчи
         (по умолчанию torch.utils.data.DataLoader)
+    :l1_regularize - если True, то в функцию потерь добавится слагаемое с регуляризатором
+    :l1_reg_alpha - коэффициент L1-регуляризации
     :return: кортеж из двух элементов:
         - среднее значение функции потерь на валидации на лучшей эпохе
         - лучшая модель
@@ -111,6 +115,12 @@ def train_eval_loop(model, train_dataset, val_dataset, criterion,
 
                 pred = model(batch_x)
                 loss = criterion(pred, batch_y)
+                
+                l1 = 0
+                if l1_regularize:
+                    for p in model.parameters():
+                        l1 = l1 + p.abs().sum()
+                    loss += l1_reg_alpha * l1
 
                 model.zero_grad()
                 loss.backward()
