@@ -2,6 +2,7 @@ import collections
 import re
 import scipy.sparse
 import numpy as np
+from nltk import ngrams
 
 TOKEN_RE = re.compile(r'[\w\d]+')
 
@@ -19,6 +20,10 @@ def character_tokenize(txt):
 def tokenize_corpus(texts, tokenizer=tokenize_text_simple_regex, **tokenizer_kwargs):
     return [tokenizer(text, **tokenizer_kwargs) for text in texts]
 
+def ngramize_corpus(texts, n, tokenizer=tokenize_text_simple_regex, **tokenizer_kwargs):
+    return [
+        [gram for gram in ngrams(tokenizer(text, **tokenizer_kwargs), n)] for text in texts  
+    ]
 
 def add_fake_token(word2id, token='<PAD>'):
     word2id_new = {token: i + 1 for token, i in word2id.items()}
