@@ -2,7 +2,10 @@ import collections
 import re
 import scipy.sparse
 import numpy as np
+import nltk
 from nltk import ngrams
+from nltk.corpus import wordnet
+
 
 TOKEN_RE = re.compile(r'[\w\d]+')
 
@@ -17,14 +20,62 @@ def character_tokenize(txt):
     return list(txt)
 
 
-def tokenize_corpus(texts, tokenizer=tokenize_text_simple_regex, **tokenizer_kwargs):
-    return [tokenizer(text, **tokenizer_kwargs) for text in texts]
+def tokenize_corpus(texts, tokenizer=tokenize_text_simple_regex, 
+                    stemmer=None, lemmatizer=None, **tokenizer_kwargs):
+    """
+    A function to tokenize a corpus of texts
+    Can lemmatize or stem the tokens (not both at the same time)
+    """
+    corpus_tokens = []
+    if stemmer:
+        corpus_tokens = [
+            [
+                stemmer.stem(token) for token in tokenizer(text, **tokenizer_kwargs)
+            ] for text in texts
+        ]
+            
+    elif lemmatizer:        
+        corpus_tokens = [
+            [
+                lemmatizer.lemmatize(token, get_wordnet_pos(token)) \
+                    for token in tokenizer(text, **tokenizer_kwargs)
+            ] for text in texts
+        ]
+    else:
+        corpus_tokens = [tokenizer(text, **tokenizer_kwargs) for text in texts]
+    
+    return corpus_tokens
 
-def ngramize_corpus(texts, n, tokenizer=tokenize_text_simple_regex, **tokenizer_kwargs):
-    return [
-        [gram for gram in ngrams(tokenizer(text, **tokenizer_kwargs), n)] for text in texts  
-    ]
-
+def ngramize_corpus(texts, n, all_up_to_n=False, 
+                    tokenizer=tokenize_text_simple_regex, stemmer=None,
+                    lemmatizer=None, **tokenizer_kwargs):
+    assert n >= 1
+    
+    corpus_ngrams = []
+    for text in texts:
+        text_ngrams = []
+        if stemmer:
+            tokenized_text =  [
+                stemmer.stem(token) for token in tokenizer(text, **tokenizer_kwargs)
+            ]
+        elif lemmatizer:
+            tokenized_text =  [
+                lemmatizer.lemmatize(token, get_wordnet_pos(token)) \
+                    for token in tokenizer(text, **tokenizer_kwargs)
+            ]
+        else:
+            tokenized_text =  tokenizer(text, **tokenizer_kwargs)
+            
+        if all_up_to_n:
+            for k in range(1, n + 1):
+                    for gram in ngrams(tokenized_text, k):
+                        text_ngrams.append(gram)
+        else:
+            text_ngrams = [gram for gram in ngrams(tokenizer(text, **tokenizer_kwargs), n)]
+            
+        corpus_ngrams.append(text_ngrams)
+    return corpus_ngrams
+        
 def add_fake_token(word2id, token='<PAD>'):
     word2id_new = {token: i + 1 for token, i in word2id.items()}
     word2id_new[token] = 0
@@ -86,6 +137,18 @@ def document_word_occurences(tokenized_texts, word2id, labels, n_classes):
                 result[labels[text_id], word2id[token]] += 1
     return result
 
+def get_wordnet_pos(word):
+    """
+    Map POS tag to first character lemmatize() accepts
+    This function is used in lemmatizers
+    """
+    tag = nltk.pos_tag([word])[0][1][0].upper()
+    tag_dict = {"J": wordnet.ADJ,
+                "N": wordnet.NOUN,
+                "V": wordnet.VERB,
+                "R": wordnet.ADV}
+
+    return tag_dict.get(tag, wordnet.NOUN)
 
 PAD_TOKEN = '__PAD__'
 NUMERIC_TOKEN = '__NUMBER__'
